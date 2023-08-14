@@ -32,13 +32,16 @@ class HTTPRequest:
     Lock = RLock()
 
     def __init__(self, url: str):
+        # Website's url
         self.url = url
+        # search results' num of novel
         self.search_results_len = 0
-
+        # all chapters of the novel
         self.chapter_href_list_len = 0
         self.novel_title = ''
-        self.novel_text_href = []
-        self.chapter_href_list = {}
+        # to the novel's main page
+        self.novel_text_href_list = []
+        self.chapter_href_dict = {}
 
     @staticmethod
     def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=None, referer=''):
@@ -107,13 +110,11 @@ class HTTPRequest:
                 novel_author = title_li.select("span[class='s4 wid'] a")
                 latest_update_chapter = title_li.select("span[class='s3 wid3'] a")
                 update_time = title_li.select("span[class='s6 wid6']")
-                """
-                Each results' url
-                """
+
                 if novel_name[0].get('href') is None:
-                    self.novel_text_href.append('')
+                    self.novel_text_href_list.append('')
                 else:
-                    self.novel_text_href.append(novel_name[0].get('href'))
+                    self.novel_text_href_list.append(novel_name[0].get('href'))
 
                 novel_index = novel_index[0].get_text() if novel_index[0] is not None else '未找到结果'
                 novel_name = novel_name[0].get_text() if novel_name[0] is not None else '未找到结果'
@@ -129,6 +130,7 @@ class HTTPRequest:
             except Exception as e:
                 print(f'\033[31m分析出错:\033[0m {e}')
                 return False
+
         self.search_results_len = len(search_result_list[1:])
         return True
 
@@ -139,7 +141,7 @@ class HTTPRequest:
         :return: If work correctly, it will return the chapter list and title of selected novel
         """
         try:
-            novel_page_html = self.get_html(self.url + self.novel_text_href[novel_name_index])
+            novel_page_html = self.get_html(self.url + self.novel_text_href_list[novel_name_index])
         except Exception as e:
             print(e)
             return False
@@ -156,10 +158,10 @@ class HTTPRequest:
         for tag in chapter_list.select('dd'):
             href = tag.a.get('href')
             title = tag.get_text()
-            self.chapter_href_list[href] = title
-        self.chapter_href_list_len = len(self.chapter_href_list)
+            self.chapter_href_dict[href] = title
+        self.chapter_href_list_len = len(self.chapter_href_dict) + 1
 
-        return self.chapter_href_list, self.novel_title
+        return self.chapter_href_dict
 
     def novel_text_analysis(self, href_key):
         html_page = self.get_html(self.url + href_key)
@@ -186,12 +188,27 @@ class HTTPRequest:
 
 
 if __name__ == '__main__':
+    print('真在测试网站连通性...')
+    if os.system('ping www.ibiquzw.com'):
+        print('当前网站无法访问,请稍后再试')
+        os.system('pause')
+        exit()
+
     search_char = input('\033[36;1m请输入查询的小说名称:\033[0m ')
+    print('\033[32m开始查找...\033[0m')
 
     getNovelPage = HTTPRequest('https://www.ibiquzw.com')
     html = getNovelPage.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
-    if not getNovelPage.search_page_analysis(html):
-        exit('Error')
+    while True:
+        searchResult = getNovelPage.search_page_analysis(html)
+        if not getNovelPage.search_results_len:
+            print('搜索结果为空,换一个关键词吧~')
+            continue
+        break
+    if not searchResult:
+        print('\033[31mError\033[0m')
+        os.system('pause')
+        exit()
     del html
 
     while True:
@@ -202,11 +219,16 @@ if __name__ == '__main__':
                 break
             print('\033[31m请输入整数,且不小于0不大于搜索结果数\033[0m')
         else:
-            print('\033[31m请输入整数,且不小于0不大于搜索结果数\033[0m')
+            print('\033[31m请输入整数\033[0m')
 
-    chapterList, novelMainTitle = getNovelPage.chapter_page_analysis(select)
+    chapterList = getNovelPage.chapter_page_analysis(select)
+    if not chapterList:
+        print('\033[31mError\033[0m')
+        os.system('pause')
+        exit()
+
     pages = getNovelPage.chapter_href_list_len
-    print(f'当前小说共{pages}页')
+    print(f'当前任务共{pages}条')
 
     outPageNums = 1
     for titleValue in chapterList.values():
@@ -239,6 +261,7 @@ if __name__ == '__main__':
             time.sleep(0.5)
             start = input('\033[36;1m选择起始章节,如需要全部,输入all,否则输入整数:\033[0m ')
             if start.lower() == 'all':
+                start = 0
                 break
             if not start.isdigit():
                 print('\033[33;1m章节目录必须是整数!\033[0m')
@@ -251,6 +274,7 @@ if __name__ == '__main__':
             end = input('\033[36;1m选择终止章节,如不输入默认选择最后一章,否则输入整数:\033[0m ')
             if end == '':
                 chapterList = chapterList[start:]
+                getNovelPage.chapter_href_list_len = pages - start
                 break
             if not end.isdigit():
                 print('\033[33;1m章节目录必须是整数!\033[0m')
@@ -259,7 +283,11 @@ if __name__ == '__main__':
             if end <= start:
                 print('\033[33;1m终止章节数不能小于等于起始章节!\033[0m')
                 continue
+            if end > pages:
+                print('\033[33;1m终止章节数不能大于最大章节!\033[0m')
+                continue
             chapterList = chapterList[start:end]
+            getNovelPage.chapter_href_list_len = end - start
             break
 
         print('Start processing...')
