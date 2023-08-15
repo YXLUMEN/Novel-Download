@@ -1,9 +1,11 @@
 import os
+
 import random
 import re
 import time
+import argparse
 from concurrent.futures import ThreadPoolExecutor
-from threading import RLock
+from threading import Lock
 
 try:
     import requests
@@ -19,17 +21,23 @@ try:
     from anti_useragent import UserAgent
 except Exception as E:
     print(E)
-    os.system("pip install fake-useragent")
+    os.system("pip install anti-useragent")
 try:
     import lxml
 except Exception as E:
     print(E)
     os.system("pip install lxml")
 
+parsers = argparse.ArgumentParser()
+parsers.add_argument(
+    '-MT', '--thread', default=32, type=int, required=False,
+    help='最大线程数,根据计算机性能决定,不建议太大'
+)
+
 
 class HTTPRequest:
     down = 1
-    Lock = RLock()
+    Lock = Lock()
 
     def __init__(self, url: str):
         # Website's url
@@ -159,7 +167,7 @@ class HTTPRequest:
             href = tag.a.get('href')
             title = tag.get_text()
             self.chapter_href_dict[href] = title
-        self.chapter_href_list_len = len(self.chapter_href_dict) + 1
+        self.chapter_href_list_len = len(self.chapter_href_dict)
 
         return self.chapter_href_dict
 
@@ -180,26 +188,32 @@ class HTTPRequest:
         text = re.sub(r'</?div.*>|\s+\s', '', text)
 
         with self.Lock:
-            self.down += 1
             print(f'\r{self.down}/{self.chapter_href_list_len}', end='')
+            self.down += 1
 
         text = title + '\n\n' + text + '\n\n'
         return text
 
 
 if __name__ == '__main__':
-    print('真在测试网站连通性...')
+    print('\033[32;4m测试网站连通性...\033[0m')
     if os.system('ping www.ibiquzw.com'):
-        print('当前网站无法访问,请稍后再试')
+        print('\033[33m当前网站无法访问,请稍后再试\033[0m')
         os.system('pause')
         exit()
 
-    search_char = input('\033[36;1m请输入查询的小说名称:\033[0m ')
-    print('\033[32m开始查找...\033[0m')
+    print(
+        '使用说明: 在下载时请不要中断程序,除非不在需要下载内容; '
+        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>; '
+        '目标网站近期不太稳定,此程序正在重构...'
+    )
+    time.sleep(1)
 
     getNovelPage = HTTPRequest('https://www.ibiquzw.com')
-    html = getNovelPage.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
     while True:
+        search_char = input('\033[36;1m请输入查询的小说名称:\033[0m ')
+        print('\033[32m开始查找...\033[0m')
+        html = getNovelPage.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
         searchResult = getNovelPage.search_page_analysis(html)
         if not getNovelPage.search_results_len:
             print('搜索结果为空,换一个关键词吧~')
@@ -230,8 +244,8 @@ if __name__ == '__main__':
     pages = getNovelPage.chapter_href_list_len
     print(f'当前任务共{pages}条')
 
-    outPageNums = 1
-    for titleValue in chapterList.values():
+    # outPageNums = 1
+    for outPageNums, titleValue in enumerate(chapterList.values(), 1):
         print(f'{titleValue}')
         if outPageNums % 10 == 0:
             temp = input('\033[36;1m是否显示接下来的章节名?\033[0m (y/n)\n')
@@ -239,8 +253,6 @@ if __name__ == '__main__':
                 pass
             else:
                 break
-        outPageNums += 1
-    del outPageNums
 
     while True:
         select = input('\033[36;1m是否下载?\033[0m (y/n)\n')
@@ -250,13 +262,7 @@ if __name__ == '__main__':
             break
     if select.lower() == 'y':
 
-        if not os.access('./Download', os.W_OK):
-            os.mkdir('./Download')
-        frp = open(f'./Download/{getNovelPage.novel_title}.txt', 'w+', encoding='utf-8')
-
-        downloadPool = ThreadPoolExecutor(max_workers=32)
         chapterList = list(chapterList)
-
         while True:
             time.sleep(0.5)
             start = input('\033[36;1m选择起始章节,如需要全部,输入all,否则输入整数:\033[0m ')
@@ -289,6 +295,12 @@ if __name__ == '__main__':
             chapterList = chapterList[start:end]
             getNovelPage.chapter_href_list_len = end - start
             break
+
+        arg = parsers.parse_args()
+        if not os.access('./Download', os.W_OK):
+            os.mkdir('./Download')
+        frp = open(f'./Download/{getNovelPage.novel_title}.txt', 'w+', encoding='utf-8')
+        downloadPool = ThreadPoolExecutor(max_workers=arg.thread)
 
         print('Start processing...')
         result = downloadPool.map(getNovelPage.novel_text_analysis, chapterList)
