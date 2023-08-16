@@ -149,8 +149,16 @@ class HTTPRequest:
         :return: If work correctly,
         it will return the chapter list and title of the selected novel
         """
+        url = self.url + self.novel_text_href_list[novel_name_index]
+        os.system(f'start {url}')
+        while True:
+            select = selection('请确认小说内容是否存在,以避免无效工作(y/n)\n')
+            if select == 'y':
+                break
+            return False
+
         try:
-            novel_page_html = self.get_html(self.url + self.novel_text_href_list[novel_name_index])
+            novel_page_html = self.get_html(url)
         except Exception as e:
             print(e)
             return False
