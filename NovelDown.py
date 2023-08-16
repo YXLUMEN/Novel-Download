@@ -41,6 +41,7 @@ class HTTPRequest:
 
     def __init__(self, url: str):
         # Website's url
+        self.mode = 0
         self.url = url
         # search results' num of novel
         self.search_results_len = 0
@@ -149,10 +150,12 @@ class HTTPRequest:
         :return: If work correctly,
         it will return the chapter list and title of the selected novel
         """
-        url = self.url + self.novel_text_href_list[novel_name_index]
+        print('请确认小说内容是否存在,以避免无效工作')
+        time.sleep(2)
+        url = f'{self.url}{self.novel_text_href_list[novel_name_index]}'
         os.system(f'start {url}')
         while True:
-            select = selection('请确认小说内容是否存在,以避免无效工作(y/n)\n')
+            select = selection('是否正确?(y/n)\n')
             if select == 'y':
                 break
             return False
@@ -180,13 +183,13 @@ class HTTPRequest:
         self.chapter_href_list_len = len(self.chapter_href_dict)
         return self.chapter_href_dict
 
-    def novel_text_analysis(self, href_key):
-        html_page = self.get_html(self.url + href_key)
+    def novel_text_analysis(self, href_key: str, index=0):
+        html_page = self.get_html(f'{self.url}{href_key}')
         try:
             text_soup_object = BeautifulSoup(html_page, 'lxml')
         except Exception as e:
             print(e)
-            return
+            return False
 
         title = text_soup_object.select("div[class='bookname'] h1")[0].get_text()
         original_text = text_soup_object.select("div[id='content']")[0]
@@ -195,19 +198,23 @@ class HTTPRequest:
         text = str(original_text)
         text = text.replace('<br/><br/>', '\n').replace(' ', '')
         text = re.sub(r'</?div.*>|\s+\s', '', text)
+        text = f'{title}\n\n{text}\n\n'
 
+        if self.mode:
+            fopen = open(f'./Download/{self.novel_title}/{index} {title}', 'w', encoding='utf-8')
+            fopen.write(text)
+            fopen.close()
         with self.Lock:
             print(f'\r{self.down}/{self.chapter_href_list_len}', end='')
             self.down += 1
 
-        text = title + '\n\n' + text + '\n\n'
         return text
 
 
-def selection(tips: str):
+def selection(tips: str, option=('y', 'n')):
     while True:
         select = input(tips)
-        if select.lower() in ('y', 'n'):
+        if select.lower() in option:
             return select
         print('无此选项')
         continue
@@ -305,16 +312,24 @@ def main():
     arg = parsers.parse_args()
     if not os.access('./Download', os.W_OK):
         os.mkdir('./Download')
-    frp = open(f'./Download/{get_novel_page.novel_title}.txt', 'w+', encoding='utf-8')
+
     download_pool = ThreadPoolExecutor(max_workers=arg.thread)
 
+    select = selection('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中?(y/n)\033[0m\n')
     print('Start processing...')
-    result = download_pool.map(get_novel_page.novel_text_analysis, chapter_list)
-    for each in result:
-        frp.write(each)
-
+    if select == 'y':
+        frp = open(f'./Download/{get_novel_page.novel_title}.txt', 'w', encoding='utf-8')
+        result = download_pool.map(get_novel_page.novel_text_analysis, chapter_list)
+        for each in result:
+            frp.write(each)
+        frp.close()
+    else:
+        get_novel_page.mode = 1
+        if not os.access(f'./Download/{get_novel_page.novel_title}', os.W_OK):
+            os.mkdir(f'./Download/{get_novel_page.novel_title}')
+        for i, each in enumerate(chapter_list):
+            download_pool.submit(get_novel_page.novel_text_analysis, each, i)
     download_pool.shutdown(wait=True)
-    frp.close()
 
     return True
 
