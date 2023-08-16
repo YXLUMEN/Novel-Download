@@ -101,7 +101,7 @@ class HTTPRequest:
         """
 
         :param html_page:
-        :return: When something go wrong it will return False
+        :return: When something goes wrong, it will return False
         """
         try:
             search_soup_object = BeautifulSoup(html_page, 'lxml')
@@ -146,7 +146,8 @@ class HTTPRequest:
         """
 
         :param novel_name_index:
-        :return: If work correctly, it will return the chapter list and title of selected novel
+        :return: If work correctly,
+        it will return the chapter list and title of the selected novel
         """
         try:
             novel_page_html = self.get_html(self.url + self.novel_text_href_list[novel_name_index])
@@ -167,8 +168,8 @@ class HTTPRequest:
             href = tag.a.get('href')
             title = tag.get_text()
             self.chapter_href_dict[href] = title
-        self.chapter_href_list_len = len(self.chapter_href_dict)
 
+        self.chapter_href_list_len = len(self.chapter_href_dict)
         return self.chapter_href_dict
 
     def novel_text_analysis(self, href_key):
@@ -195,119 +196,144 @@ class HTTPRequest:
         return text
 
 
-if __name__ == '__main__':
-    print('\033[32;4m测试网站连通性...\033[0m')
-    if os.system('ping www.ibiquzw.com'):
-        print('\033[33m当前网站无法访问,请稍后再试\033[0m')
-        os.system('pause')
-        exit()
+def selection(tips: str):
+    while True:
+        select = input(tips)
+        if select.lower() in ('y', 'n'):
+            return select
+        print('无此选项')
+        continue
 
-    print(
-        '使用说明: 在下载时请不要中断程序,除非不在需要下载内容; '
-        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>; '
-        '目标网站近期不太稳定,此程序正在重构...'
-    )
-    time.sleep(1)
 
-    getNovelPage = HTTPRequest('https://www.ibiquzw.com')
+def main():
+    get_novel_page = HTTPRequest('https://www.ibiquzw.com')
+    # search the novel by its title and author's name
     while True:
         search_char = input('\033[36;1m请输入查询的小说名称:\033[0m ')
         print('\033[32m开始查找...\033[0m')
-        html = getNovelPage.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
-        searchResult = getNovelPage.search_page_analysis(html)
-        if not getNovelPage.search_results_len:
-            print('搜索结果为空,换一个关键词吧~')
+        html = get_novel_page.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
+        search_result = get_novel_page.search_page_analysis(html)
+
+        if not search_result:
+            print('\033[31mError\033[0m')
+            return False
+
+        if not get_novel_page.search_results_len:
+            print('\n搜索结果为空,换一个关键词吧~')
+            time.sleep(1)
             continue
-        break
-    if not searchResult:
-        print('\033[31mError\033[0m')
-        os.system('pause')
-        exit()
+        # end the search
+        select = selection('\033[34;1m是否结束查询? (y/n)\033[0m \n')
+        if select.lower() == 'y':
+            break
     del html
 
     while True:
         select = input('\033[36;1m请选择小说序号:\033[0m ')
         if select.isdigit():
             select = int(select) - 1
-            if 0 <= select < getNovelPage.search_results_len:
+            if 0 <= select < get_novel_page.search_results_len:
                 break
             print('\033[31m请输入整数,且不小于0不大于搜索结果数\033[0m')
         else:
             print('\033[31m请输入整数\033[0m')
 
-    chapterList = getNovelPage.chapter_page_analysis(select)
-    if not chapterList:
+    chapter_list = get_novel_page.chapter_page_analysis(select)
+    if not chapter_list:
         print('\033[31mError\033[0m')
-        os.system('pause')
-        exit()
+        return False
 
-    pages = getNovelPage.chapter_href_list_len
-    print(f'当前任务共{pages}条')
+    pages = get_novel_page.chapter_href_list_len
+    print(f'\033[32;1m当前共{pages}章\033[0m')
 
     # outPageNums = 1
-    for outPageNums, titleValue in enumerate(chapterList.values(), 1):
+    for outPageNums, titleValue in enumerate(chapter_list.values(), 1):
         print(f'{titleValue}')
         if outPageNums % 10 == 0:
-            temp = input('\033[36;1m是否显示接下来的章节名?\033[0m (y/n)\n')
-            if temp.lower() == 'y':
+            select = selection('\033[36;1m是否显示接下来的章节名?\033[0m (y/n)\n')
+            if select.lower() == 'y':
                 pass
             else:
                 break
 
+    select = selection('\033[36;1m是否下载?\033[0m (y/n)\n')
+    if select.lower() == 'n':
+        return True
+    chapter_list = list(chapter_list)
     while True:
-        select = input('\033[36;1m是否下载?\033[0m (y/n)\n')
-        if select.lower() not in ['y', 'n']:
-            print('无此选项')
-        else:
+        time.sleep(0.5)
+        start = input('\033[36;1m选择起始章节,如需要全部,输入all,否则输入整数:\033[0m ')
+        # break the loop
+        if start.lower() == 'all':
             break
-    if select.lower() == 'y':
+        # "start" will be defined as an int
+        if not start.isdigit():
+            print('\033[33;1m章节目录必须是整数!\033[0m')
+            continue
+        start = int(start)
+        if start < 0 or start > pages:
+            print('\033[33;1m选择不能小于0或大于最大章节数\033[0m')
+            continue
 
-        chapterList = list(chapterList)
-        while True:
-            time.sleep(0.5)
-            start = input('\033[36;1m选择起始章节,如需要全部,输入all,否则输入整数:\033[0m ')
-            if start.lower() == 'all':
-                start = 0
-                break
-            if not start.isdigit():
-                print('\033[33;1m章节目录必须是整数!\033[0m')
-                continue
-            start = int(start)
-            if start < 0 or start > pages:
-                print('\033[33;1m选择不能小于0或大于最大章节数\033[0m')
-                continue
-
-            end = input('\033[36;1m选择终止章节,如不输入默认选择最后一章,否则输入整数:\033[0m ')
-            if end == '':
-                chapterList = chapterList[start:]
-                getNovelPage.chapter_href_list_len = pages - start
-                break
-            if not end.isdigit():
-                print('\033[33;1m章节目录必须是整数!\033[0m')
-                continue
-            end = int(end)
-            if end <= start:
-                print('\033[33;1m终止章节数不能小于等于起始章节!\033[0m')
-                continue
-            if end > pages:
-                print('\033[33;1m终止章节数不能大于最大章节!\033[0m')
-                continue
-            chapterList = chapterList[start:end]
-            getNovelPage.chapter_href_list_len = end - start
+        end = input('\033[36;1m选择终止章节,如不输入默认选择最后一章,否则输入整数:\033[0m ')
+        if end == '':
+            chapter_list = chapter_list[start:]
+            get_novel_page.chapter_href_list_len = pages - start
             break
+        if not end.isdigit():
+            print('\033[33;1m章节目录必须是整数!\033[0m')
+            continue
+        end = int(end)
+        if end <= start:
+            print('\033[33;1m终止章节数不能小于等于起始章节!\033[0m')
+            continue
+        if end > pages:
+            print('\033[33;1m终止章节数不能大于最大章节!\033[0m')
+            continue
+        chapter_list = chapter_list[start:end]
+        get_novel_page.chapter_href_list_len = end - start
+        break
 
-        arg = parsers.parse_args()
-        if not os.access('./Download', os.W_OK):
-            os.mkdir('./Download')
-        frp = open(f'./Download/{getNovelPage.novel_title}.txt', 'w+', encoding='utf-8')
-        downloadPool = ThreadPoolExecutor(max_workers=arg.thread)
+    arg = parsers.parse_args()
+    if not os.access('./Download', os.W_OK):
+        os.mkdir('./Download')
+    frp = open(f'./Download/{get_novel_page.novel_title}.txt', 'w+', encoding='utf-8')
+    download_pool = ThreadPoolExecutor(max_workers=arg.thread)
 
-        print('Start processing...')
-        result = downloadPool.map(getNovelPage.novel_text_analysis, chapterList)
-        for each in result:
-            frp.write(each)
-        downloadPool.shutdown(wait=True)
-        frp.close()
+    print('Start processing...')
+    result = download_pool.map(get_novel_page.novel_text_analysis, chapter_list)
+    for each in result:
+        frp.write(each)
 
-    print('\n\nExit')
+    download_pool.shutdown(wait=True)
+    frp.close()
+
+    return True
+
+
+if __name__ == '__main__':
+    print('\033[32;4m测试网站连通性...\033[0m')
+    if os.system('ping -n 2 www.ibiquzw.com'):
+        print('\033[33m当前网站无法访问,请稍后再试\033[0m')
+        os.system('pause')
+        exit()
+
+    print(
+        '\n使用说明: 在下载时请不要中断程序,除非不再需要下载内容;\n'
+        '在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\n'
+        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n'
+        '目标网站近期不太稳定,此程序正在重构...\n'
+    )
+    time.sleep(1)
+
+    while True:
+        if not main():
+            print('\033[31mSomething wrong...\033[0m')
+
+        choice = selection('\n\033[32mEnd the progres? (y/n)\033[0m\n')
+        if choice == 'y':
+            break
+        time.sleep(1)
+
+    print('Exit')
     os.system('pause')
