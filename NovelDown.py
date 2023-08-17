@@ -151,14 +151,11 @@ class HTTPRequest:
         it will return the chapter list and title of the selected novel
         """
         print('请确认小说内容是否存在,以避免无效工作')
-        time.sleep(2)
         url = f'{self.url}{self.novel_text_href_list[novel_name_index]}'
-        os.system(f'start {url}')
-        while True:
-            select = selection('是否正确?(y/n)\n')
-            if select == 'y':
-                break
-            return False
+        select = selection('是否打开浏览器确认?(y/n)\n')
+        if select == 'y':
+            os.system(f'start {url}')
+        time.sleep(2)
 
         try:
             novel_page_html = self.get_html(url)
@@ -220,13 +217,25 @@ def selection(tips: str, option=('y', 'n')):
         continue
 
 
-def main():
-    get_novel_page = HTTPRequest('https://www.ibiquzw.com')
+def website_select(ping):
+    if ping:
+        url = 'https://www.ibiquzw.com'
+        search_url = 'https://www.ibiquzw.com/search.html'
+        key = 'name'
+    else:
+        url = 'https://m.ibiquge.org'
+        search_url = 'https://m.ibiquge.org/SearchBook.php'
+        key = 'keyword'
+    return url, search_url, key
+
+
+def main(url: str, search_url: str, key: str, ping):
+    get_novel_page = HTTPRequest(url)
     # search the novel by its title and author's name
     while True:
         search_char = input('\033[36;1m请输入查询的小说名称:\033[0m ')
         print('\033[32m开始查找...\033[0m')
-        html = get_novel_page.get_html('https://www.ibiquzw.com/search.html', params={'name': search_char})
+        html = get_novel_page.get_html(search_url, params={key: search_char})
         search_result = get_novel_page.search_page_analysis(html)
 
         if not search_result:
@@ -260,7 +269,6 @@ def main():
 
     pages = get_novel_page.chapter_href_list_len
     print(f'\033[32;1m当前共{pages}章\033[0m')
-
     # outPageNums = 1
     for outPageNums, titleValue in enumerate(chapter_list.values(), 1):
         print(f'{titleValue}')
@@ -336,8 +344,13 @@ def main():
 
 if __name__ == '__main__':
     print('\033[32;4m测试网站连通性...\033[0m')
+
+    ping_result = True
     if os.system('ping -n 2 www.ibiquzw.com'):
-        print('\033[33m当前网站无法访问,请稍后再试\033[0m')
+        print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
+        ping_result = False
+    elif os.system('ping -n 2 m.ibiquge.org/SearchBook'):
+        print('\033[31m备用网站无法访问,请稍后尝试,程序将退出\033[0m')
         os.system('pause')
         exit()
 
@@ -349,8 +362,10 @@ if __name__ == '__main__':
     )
     time.sleep(1)
 
+    Url, searchUrl, Key = website_select(ping_result)
+
     while True:
-        if not main():
+        if not main(Url, searchUrl, Key, ping_result):
             print('\033[31mSomething wrong...\033[0m')
 
         choice = selection('\n\033[32mEnd the progres? (y/n)\033[0m\n')
