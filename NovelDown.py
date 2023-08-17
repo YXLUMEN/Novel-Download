@@ -217,6 +217,7 @@ def selection(tips: str, option=('y', 'n')):
         continue
 
 
+# TODO
 def website_select(ping):
     if ping:
         url = 'https://www.ibiquzw.com'
@@ -345,14 +346,16 @@ def main(url: str, search_url: str, key: str, ping):
 if __name__ == '__main__':
     print('\033[32;4m测试网站连通性...\033[0m')
 
-    ping_result = True
+    # ping_result = True
     if os.system('ping -n 2 www.ibiquzw.com'):
-        print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
-        ping_result = False
+        print('\033[33m当前网站无法访问,将切换至备用网站(WIP)\033[0m')
+        os.system('pause')
+        exit()
+    """ping_result = False
     elif os.system('ping -n 2 m.ibiquge.org/SearchBook'):
         print('\033[31m备用网站无法访问,请稍后尝试,程序将退出\033[0m')
         os.system('pause')
-        exit()
+        exit()"""
 
     print(
         '\n使用说明: 在下载时请不要中断程序,除非不再需要下载内容;\n'
@@ -362,10 +365,10 @@ if __name__ == '__main__':
     )
     time.sleep(1)
 
-    Url, searchUrl, Key = website_select(ping_result)
+    Url, searchUrl, Key = website_select(True)
 
     while True:
-        if not main(Url, searchUrl, Key, ping_result):
+        if not main(Url, searchUrl, Key, True):
             print('\033[31mSomething wrong...\033[0m')
 
         choice = selection('\n\033[32mEnd the progres? (y/n)\033[0m\n')
