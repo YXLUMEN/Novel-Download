@@ -1,8 +1,8 @@
-﻿from threading import Lock
+﻿import re
+from threading import Lock
 
-import re
 from bs4 import BeautifulSoup
-import os
+
 from utility import *
 
 

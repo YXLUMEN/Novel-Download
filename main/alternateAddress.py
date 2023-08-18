@@ -59,7 +59,6 @@ class HTTPRequest:
 
     def chapter_page_analysis(self, novel_name_index: int):
         print('请确认小说内容是否存在,以避免无效工作')
-
         url = f'{self.url}{self.novel_text_href_list[novel_name_index]}'
         select = selection('是否打开浏览器确认?(y/n)\n')
         if select == 'y':

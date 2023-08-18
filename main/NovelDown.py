@@ -72,7 +72,7 @@ def main(get_novel_page, search_url: str, key: str):
 
     pages = get_novel_page.chapter_href_list_len
     print(f'\033[32;1m当前共{pages}章\033[0m')
-    # outPageNums = 1
+
     for outPageNums, titleValue in enumerate(chapter_list.values(), 1):
         print(f'{titleValue}')
         if outPageNums % 10 == 0:
@@ -154,15 +154,10 @@ if __name__ == '__main__':
         os.system('pause')
         exit()
 
-    if ping_result:
-        getNovelPage = primaryAddress.HTTPRequest(Url)
-    else:
-        print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
-        getNovelPage = alternateAddress.HTTPRequest(Url)
-
     print(
-        '\n使用说明: 在下载时请不要中断程序,除非不再需要下载内容;\n'
-        '在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\n'
+        '\n\033[34;1m使用说明:\033[0m\n'
+        '在下载时请不要中断程序,除非不再需要下载内容;\n'
+        '\033[32m在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\033[0m\n'
         '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n'
         '\033[33m重构完成,正在测试\033[0m\n'
         '测试版2.0'
@@ -170,6 +165,12 @@ if __name__ == '__main__':
     time.sleep(1)
 
     while True:
+        if ping_result:
+            getNovelPage = primaryAddress.HTTPRequest(Url)
+        else:
+            print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
+            getNovelPage = alternateAddress.HTTPRequest(Url)
+
         if not main(getNovelPage, searchUrl, Key):
             print('\033[31mSomething wrong...\033[0m')
 
