@@ -1,6 +1,8 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 
+from tqdm import tqdm
+
 import alternateAddress
 import primaryAddress
 from utility import *
@@ -128,6 +130,8 @@ def main(get_novel_page, search_url: str, key: str):
 
     select = selection('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中?(y/n)\033[0m\n')
     print('Start processing...')
+    get_novel_page.bar = tqdm(total=get_novel_page.chapter_href_list_len)
+    get_novel_page.bar.set_description('DownLoad')
     if select == 'y':
         frp = open(f'./Download/{get_novel_page.novel_title}.txt', 'w', encoding='utf-8')
         result = download_pool.map(get_novel_page.novel_text_analysis, chapter_list)
@@ -141,6 +145,7 @@ def main(get_novel_page, search_url: str, key: str):
         for i, each in enumerate(chapter_list):
             download_pool.submit(get_novel_page.novel_text_analysis, each, i)
     download_pool.shutdown(wait=True)
+    get_novel_page.bar.close()
 
     return True
 
@@ -160,9 +165,9 @@ if __name__ == '__main__':
         '\033[32m在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\033[0m\n'
         '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n'
         '\033[33m重构完成,正在测试\033[0m\n'
-        '测试版2.0'
+        '测试版2.2'
     )
-    time.sleep(1)
+    time.sleep(0.5)
 
     while True:
         if ping_result:
@@ -178,6 +183,7 @@ if __name__ == '__main__':
         if choice == 'y':
             break
         time.sleep(1)
+        os.system('cls')
 
     print('Exit')
     os.system('pause')

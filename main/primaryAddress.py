@@ -1,5 +1,4 @@
 ﻿import re
-from threading import Lock
 
 from bs4 import BeautifulSoup
 
@@ -7,8 +6,6 @@ from utility import *
 
 
 class HTTPRequest:
-    down = 1
-    Lock = Lock()
 
     def __init__(self, url: str):
         # Website's url
@@ -22,6 +19,8 @@ class HTTPRequest:
         # to the novel's main page
         self.novel_text_href_list = []
         self.chapter_href_dict = {}
+
+        self.bar = None
 
     # 列出搜索结果,将小说网址加入列表
     def search_page_analysis(self, html_page: str):
@@ -127,8 +126,6 @@ class HTTPRequest:
             fopen = open(f'./Download/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
             fopen.write(text)
             fopen.close()
-        with self.Lock:
-            print(f'\r{self.down}/{self.chapter_href_list_len}', end='')
-            self.down += 1
+        self.bar.update(1)
 
         return text
