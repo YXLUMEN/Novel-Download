@@ -41,17 +41,17 @@ def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=N
             i += 1
 
 
-def selection(tips: str, option=('y', 'n')):
+def selection(tips: str, option=('y', 'n'), warning='无此选项'):
     while True:
         select = input(tips)
         if select.lower() in option:
             return select
-        print('无此选项')
+        print(warning)
         continue
 
 
 def website_select():
-    if not os.system('ping -n 2 www.ibiquzw.com'):
+    if os.system('ping -n 2 www.ibiquzw.com'):
         url = 'https://www.ibiquzw.com'
         search_url = 'https://www.ibiquzw.com/search.html'
         key = 'name'

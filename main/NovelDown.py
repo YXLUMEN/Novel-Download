@@ -171,10 +171,10 @@ if __name__ == '__main__':
 
     while True:
         if ping_result:
-            getNovelPage = primaryAddress.HTTPRequest(Url)
+            getNovelPage = primaryAddress.HTTPRequest(Url, './Download')
         else:
             print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
-            getNovelPage = alternateAddress.HTTPRequest(Url)
+            getNovelPage = alternateAddress.HTTPRequest(Url, './Download')
 
         if not main(getNovelPage, searchUrl, Key):
             print('\033[31mSomething wrong...\033[0m')

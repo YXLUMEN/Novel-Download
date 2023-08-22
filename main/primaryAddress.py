@@ -7,9 +7,11 @@ from utility import *
 
 class HTTPRequest:
 
-    def __init__(self, url: str):
-        # Website's url
+    def __init__(self, url: str, download_dir: str):
+        self.download_dir = download_dir
         self.mode = 0
+
+        # Website's url
         self.url = url
         # search results' num of novel
         self.search_results_len = 0
@@ -50,15 +52,15 @@ class HTTPRequest:
                 else:
                     self.novel_text_href_list.append(novel_name[0].get('href'))
 
-                novel_index = novel_index[0].get_text() if novel_index[0] is not None else '未找到结果'
-                novel_name = novel_name[0].get_text() if novel_name[0] is not None else '未找到结果'
-                novel_author = novel_author[0].get_text() if novel_author is not None else '未找到结果'
+                novel_index = novel_index[0].get_text() if novel_index[0] is not None else 'None'
+                novel_name = novel_name[0].get_text() if novel_name[0] is not None else 'None'
+                novel_author = novel_author[0].get_text() if novel_author is not None else 'None'
 
                 if latest_update_chapter[0] is not None:
                     latest_update_chapter = latest_update_chapter[0].get_text()
                 else:
-                    latest_update_chapter = '未找到结果'
-                update_time = update_time[0].get_text() if update_time[0] is not None else '未找到结果'
+                    latest_update_chapter = 'None'
+                update_time = update_time[0].get_text() if update_time[0] is not None else 'None'
 
                 print(f'{novel_index}  {novel_name}  {novel_author}  {latest_update_chapter}  {update_time}')
             except Exception as e:
@@ -80,6 +82,7 @@ class HTTPRequest:
         select = selection('是否打开浏览器确认?(y/n)\n')
         if select == 'y':
             os.system(f'start {url}')
+        print('正在获取...')
         time.sleep(2)
 
         try:
@@ -105,7 +108,7 @@ class HTTPRequest:
         self.chapter_href_list_len = len(self.chapter_href_dict)
         return self.chapter_href_dict
 
-    def novel_text_analysis(self, href_key: str, index=0):
+    def novel_text_analysis_exe(self, href_key):
         html_page = get_html(f'{self.url}{href_key}')
         try:
             text_soup_object = BeautifulSoup(html_page, 'lxml')
@@ -120,12 +123,17 @@ class HTTPRequest:
         text = str(original_text)
         text = text.replace('<br/><br/>', '\n').replace(' ', '')
         text = re.sub(r'</?div.*>|\s+\s', '', text)
-        text = f'{title}\n\n{text}\n\n'
 
+        return title, text
+
+    def novel_text_analysis(self, href_key: str, index=0):
+        title, text = self.novel_text_analysis_exe(href_key)
+
+        text = f'{title}\n\n{text}\n\n'
         if self.mode:
-            fopen = open(f'./Download/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
-            fopen.write(text)
-            fopen.close()
+            f_open = open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
+            f_open.write(text)
+            f_open.close()
         self.bar.update(1)
 
         return text
