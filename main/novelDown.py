@@ -67,6 +67,14 @@ def main(get_novel_page, search_url: str, key: str):
         else:
             print('\033[31m请输入整数\033[0m')
 
+    url = get_novel_page.url + get_novel_page.novel_text_href_list[select]
+    select_temp = selection('是否打开浏览器确认?(y/n)\n')
+    if select_temp == 'y':
+        os.system(f'start {url}')
+    print('正在获取...')
+    time.sleep(2)
+    del url, select_temp
+
     chapter_list = get_novel_page.chapter_page_analysis(select)
     if not chapter_list:
         print('\033[31mError\033[0m')

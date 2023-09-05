@@ -51,7 +51,7 @@ def selection(tips: str, option=('y', 'n'), warning='无此选项'):
 
 
 def website_select():
-    if os.system('ping -n 2 www.ibiquzw.com'):
+    if not os.system('ping -n 2 www.ibiquzw.com'):
         url = 'https://www.ibiquzw.com'
         search_url = 'https://www.ibiquzw.com/search.html'
         key = 'name'
