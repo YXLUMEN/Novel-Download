@@ -29,11 +29,13 @@ def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=N
                 r = requests.get(url, params=params, headers=headers, timeout=timeout)
             r.raise_for_status()
             r.encoding = 'utf-8'
+
             return r.text
+
         except Exception as e:
             if i >= retry_times + 1 or retry_times <= 0:
                 print(f'\033[31m网页获取:\033[0m {e}')
-                break
+                return
             # 错误重试
             print(f'\033[33m尝试重连... \033[0m{i + 1}/{retry_times}')
         finally:
@@ -51,6 +53,7 @@ def selection(tips: str, option=('y', 'n'), warning='无此选项'):
 
 
 def website_select():
+    # Choose target website
     if not os.system('ping -n 2 www.ibiquzw.com'):
         url = 'https://www.ibiquzw.com'
         search_url = 'https://www.ibiquzw.com/search.html'
@@ -63,4 +66,6 @@ def website_select():
         w_selection = 0
     else:
         raise ConnectionError('Can ont connect to any targets!')
+    os.system('cls')
+
     return url, search_url, key, w_selection

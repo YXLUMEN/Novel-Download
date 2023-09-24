@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tqdm import tqdm
 
-import alternateAddress
 import primaryAddress
 from utility import *
 
@@ -99,7 +98,7 @@ def main(get_novel_page, search_url: str, key: str):
     while True:
         time.sleep(0.5)
         start = input('\033[36;1m选择起始章节,如需要全部,输入all,否则输入整数:\033[0m ')
-        # break the loop
+        # download all, break the loop
         if start.lower() == 'all':
             break
         # "start" will be defined as an int
@@ -138,28 +137,35 @@ def main(get_novel_page, search_url: str, key: str):
 
     select = selection('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中?(y/n)\033[0m\n')
     print('Start processing...')
-    get_novel_page.bar = tqdm(total=get_novel_page.chapter_href_list_len)
+
+    # Create progress bar
+    get_novel_page.bar = tqdm(total=get_novel_page.chapter_href_list_len, colour='#39c6f9')
     get_novel_page.bar.set_description('DownLoad')
     if select == 'y':
+        # Use "map" to output one file
         frp = open(f'./Download/{get_novel_page.novel_title}.txt', 'w', encoding='utf-8')
-        result = download_pool.map(get_novel_page.novel_text_analysis, chapter_list)
+        result = download_pool.map(get_novel_page.write_novel_text, chapter_list)
         for each in result:
             frp.write(each)
         frp.close()
     else:
+        # Output each page as a file
         get_novel_page.mode = 1
         if not os.access(f'./Download/{get_novel_page.novel_title}', os.W_OK):
             os.mkdir(f'./Download/{get_novel_page.novel_title}')
         for i, each in enumerate(chapter_list):
-            download_pool.submit(get_novel_page.novel_text_analysis, each, i)
+            download_pool.submit(get_novel_page.write_novel_text, each, i)
+    # End download thread
     download_pool.shutdown(wait=True)
     get_novel_page.bar.close()
+    print('Complete.')
 
     return True
 
 
 if __name__ == '__main__':
     print('\033[32;4m测试网站连通性...\033[0m')
+    # Choose accessible websites
     try:
         Url, searchUrl, Key, ping_result = website_select()
     except ConnectionError as e:
@@ -171,18 +177,17 @@ if __name__ == '__main__':
         '\n\033[34;1m使用说明:\033[0m\n'
         '在下载时请不要中断程序,除非不再需要下载内容;\n'
         '\033[32m在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\033[0m\n'
-        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n'
-        '\033[33m重构完成,正在测试\033[0m\n'
-        '测试版2.2'
+        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n\n'
+        '正式版1.2'
     )
     time.sleep(0.5)
 
     while True:
         if ping_result:
-            getNovelPage = primaryAddress.HTTPRequest(Url, './Download')
+            getNovelPage = primaryAddress.GetFromBQ1(Url, './Download')
         else:
             print('\033[33m当前网站无法访问,将切换至备用网站\033[0m')
-            getNovelPage = alternateAddress.HTTPRequest(Url, './Download')
+            getNovelPage = primaryAddress.GetFromBQ2(Url, './Download')
 
         if not main(getNovelPage, searchUrl, Key):
             print('\033[31mSomething wrong...\033[0m')
@@ -190,7 +195,7 @@ if __name__ == '__main__':
         choice = selection('\n\033[32mEnd the progres? (y/n)\033[0m\n')
         if choice == 'y':
             break
-        time.sleep(1)
+        time.sleep(0.5)
         os.system('cls')
 
     print('Exit')
