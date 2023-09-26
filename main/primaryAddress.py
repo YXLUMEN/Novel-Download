@@ -37,13 +37,14 @@ class GetNovel:
         pass
 
     def write_novel_text(self, href_key: str, index=0):
-        text = self.novel_text_analysis_exe(href_key)
-        if not text:
+        title, text = self.novel_text_analysis_exe(href_key)
+        if not title:
             print(f'\033[31mWriteText\033[0m -> {href_key}')
             return False
 
+        text = f'{title}\n\n{text}\n\n'
         if self.mode:
-            f_open = open(f'{self.download_dir}/{self.novel_title}/{index}.txt', 'w', encoding='utf-8')
+            f_open = open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
             f_open.write(text)
             f_open.close()
         self.bar.update(1)
@@ -150,23 +151,10 @@ class GetFromBQ1(GetNovel):
         return title, text
 
     def write_novel_text(self, href_key: str, index=0):
-        title, text = self.novel_text_analysis_exe(href_key)
-        if not title:
-            print(f'\033[31mWriteText\033[0m -> {href_key}')
-            return False
-
-        text = f'{title}\n\n{text}\n\n'
-        if self.mode:
-            f_open = open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
-            f_open.write(text)
-            f_open.close()
-        self.bar.update(1)
-
-        return text
+        super().write_novel_text(href_key, index)
 
 
 class GetFromBQ2(GetNovel):
-
     # 列出搜索结果,将小说网址加入列表
     def search_page_analysis(self, html_page: str):
         try:
@@ -242,4 +230,17 @@ class GetFromBQ2(GetNovel):
         return text
 
     def write_novel_text(self, href_key: str, index=0):
-        super().write_novel_text(href_key, index)
+        text = self.novel_text_analysis_exe(href_key)
+        if not text:
+            print(f'\033[31mWriteText\033[0m -> {href_key}')
+            return False
+
+        if self.mode:
+            f_open = open(f'{self.download_dir}/{self.novel_title}/{index}.txt', 'w', encoding='utf-8')
+            f_open.write(text)
+            f_open.close()
+        self.bar.update(1)
+
+        return text
+
+
