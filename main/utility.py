@@ -43,7 +43,7 @@ def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=N
             i += 1
 
 
-def selection(tips: str, option=('y', 'n'), warning='无此选项'):
+def selection(tips: str, option=('y', 'n'), warning='\033[31m无此选项\033[0m'):
     while True:
         select = input(tips)
         if select.lower() in option:

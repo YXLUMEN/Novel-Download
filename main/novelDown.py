@@ -1,4 +1,3 @@
-import argparse
 from concurrent.futures import ThreadPoolExecutor
 
 from tqdm import tqdm
@@ -26,12 +25,6 @@ try:
 except Exception as E:
     print(E)
     os.system("pip install lxml")
-
-parsers = argparse.ArgumentParser()
-parsers.add_argument(
-    '-MT', '--thread', default=32, type=int, required=False,
-    help='最大线程数,根据计算机性能决定,不建议太大'
-)
 
 
 def main(get_novel_page, search_url: str, key: str):
@@ -129,13 +122,20 @@ def main(get_novel_page, search_url: str, key: str):
         get_novel_page.chapter_href_list_len = end - start
         break
 
-    arg = parsers.parse_args()
+    threads = 32
+    if selection(f'\033[36;1m将启动{threads}条线程,是否更改?\033[0m (y/n)\n ') == 'y':
+        while True:
+            threads = input('请输入线程数: ')
+            if threads.isdigit():
+                break
+            print('只能是整数')
+
     if not os.access('./Download', os.W_OK):
         os.mkdir('./Download')
 
-    download_pool = ThreadPoolExecutor(max_workers=arg.thread)
+    download_pool = ThreadPoolExecutor(max_workers=int(threads))
 
-    select = selection('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中?(y/n)\033[0m\n')
+    select = selection('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中? (y/n)\033[0m\n')
     print('Start processing...')
 
     # Create progress bar
@@ -176,9 +176,8 @@ if __name__ == '__main__':
     print(
         '\n\033[34;1m使用说明:\033[0m\n'
         '在下载时请不要中断程序,除非不再需要下载内容;\n'
-        '\033[32m在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\033[0m\n'
-        '可以手动增加线程数,这一般会提高下载速度,在程序所在目录打开CMD窗口,输入 NovelDown --thread <num> 使得下载线程更改为<num>;\n\n'
-        '正式版1.2'
+        '\033[32m在选择下载内容时,请查看网站是否更新了内容,本程序暂未提供内容检测;\033[0m\n\n'
+        '正式版1.3'
     )
     time.sleep(0.5)
 

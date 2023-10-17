@@ -151,7 +151,7 @@ class GetFromBQ1(GetNovel):
         return title, text
 
     def write_novel_text(self, href_key: str, index=0):
-        super().write_novel_text(href_key, index)
+        return super().write_novel_text(href_key, index)
 
 
 class GetFromBQ2(GetNovel):
@@ -162,7 +162,7 @@ class GetFromBQ2(GetNovel):
         except Exception as e:
             print(f'\033[31m分析初始化出错:\033[0m {e} ')
             return False
-        #
+
         print('序号    小说名称    作者')
         search_result_list = search_soup_object.find_all(attrs={'class': 'hot_sale'})
         for novel_index, title_li in enumerate(search_result_list, 1):
