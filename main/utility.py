@@ -4,12 +4,16 @@ import time
 
 import requests
 from anti_useragent import UserAgent
+from requests import Response
 
 
-def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=None, referer=''):
+def html_request(
+        url: str, rand_user_agent: bool = True,
+        retry_times: int = 5, timeout: int = 60, params: dict | None = None, referer: str = '') -> str:
+
     if referer == '':
         referer = url
-    headers = {
+    headers: dict = {
         'referer': referer,
     }
     if not rand_user_agent:
@@ -20,22 +24,22 @@ def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=N
         ua = UserAgent(platform='windows')
         headers['User-agent'] = ua.random
 
-    i = 0
+    i: int = 0
     while i < retry_times:
         try:
             if params is None:
-                r = requests.get(url, headers=headers, timeout=timeout)
+                response: Response = requests.get(url, headers=headers, timeout=timeout)
             else:
-                r = requests.get(url, params=params, headers=headers, timeout=timeout)
-            r.raise_for_status()
-            r.encoding = 'utf-8'
+                response: Response = requests.get(url, params=params, headers=headers, timeout=timeout)
+            response.raise_for_status()
+            response.encoding = 'utf-8'
 
-            return r.text
+            return response.text
 
         except Exception as e:
             if i >= retry_times + 1 or retry_times <= 0:
                 print(f'\033[31m网页获取:\033[0m {e}')
-                return
+                return ''
             # 错误重试
             print(f'\033[33m尝试重连... \033[0m{i + 1}/{retry_times}')
         finally:
@@ -45,14 +49,14 @@ def get_html(url: str, rand_user_agent=True, retry_times=5, timeout=60, params=N
 
 def selection(tips: str, option=('y', 'n'), warning='\033[31m无此选项\033[0m'):
     while True:
-        select = input(tips)
+        select: str = input(tips)
         if select.lower() in option:
             return select
         print(warning)
         continue
 
 
-def website_select():
+def website_select() -> tuple[str, str, str, int]:
     # Choose target website
     if not os.system('ping -n 2 www.ibiquzw.com'):
         url = 'https://www.ibiquzw.com'
