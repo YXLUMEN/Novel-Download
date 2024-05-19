@@ -1,0 +1,1 @@
+﻿from .GetNovel import GetNovel
