@@ -1,6 +1,6 @@
 ﻿from concurrent.futures import ThreadPoolExecutor
 from itertools import islice, tee
-from typing import TextIO, Generator
+from typing import Generator
 
 from tqdm import tqdm
 
@@ -147,15 +147,13 @@ def main(get_novel_page: GetFromBQ2, search_url: str, key: str):
 
     if select == 'y':
         # Use "map" to output one file
-        frp: TextIO = open(f'./Download/{get_novel_page.novel_title}.txt', 'w', encoding='utf-8')
-
         result = download_pool.map(
             get_novel_page.write_novel_text,
             islice(chapter_url_generator, start_page, end_page))
 
-        for each in result:
-            frp.write(each)
-        frp.close()
+        with open(f'./Download/{get_novel_page.novel_title}.txt', 'w', encoding='utf-8') as f:
+            for each in result:
+                f.write(each)
     else:
         # Output each page as a file
         get_novel_page.mode = 1

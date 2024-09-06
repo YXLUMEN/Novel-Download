@@ -43,9 +43,8 @@ class GetNovel:
 
         text: str = f'{title}\n\n{text}\n\n'
         if self.mode:
-            f_open = open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8')
-            f_open.write(text)
-            f_open.close()
+            with open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8') as f:
+                f.write(text)
         self.bar.update(1)
 
         return text

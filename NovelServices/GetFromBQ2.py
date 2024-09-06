@@ -1,5 +1,5 @@
 ﻿import re
-from typing import Generator, TextIO
+from typing import Generator
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
@@ -95,9 +95,8 @@ class GetFromBQ2(GetNovel):
             return False
 
         if self.mode:
-            f_open: TextIO = open(f'{self.download_dir}/{self.novel_title}/{index}.txt', 'w', encoding='utf-8')
-            f_open.write(text)
-            f_open.close()
+            with open(f'{self.download_dir}/{self.novel_title}/{index}.txt', 'w', encoding='utf-8') as f:
+                f.write(text)
         self.bar.update(1)
 
         return text
