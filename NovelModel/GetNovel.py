@@ -18,7 +18,7 @@ class GetNovel:
         self.chapters_count: int = 0
         self.novel_title: str = ''
         # to the novel's main page
-        # 根据网站,最大100条
+        # 根据网站, 最大100条
         self.search_results_list: list = []
 
         self.bar = None

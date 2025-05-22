@@ -1,10 +1,11 @@
 ﻿import re
-from typing import Generator
+from typing import Generator, Any
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
 from NovelModel import GetNovel
-from utility import *
+from config import logger
+from util import fetch_html
 
 
 class GetFromBQ2(GetNovel):
@@ -13,7 +14,7 @@ class GetFromBQ2(GetNovel):
         try:
             search_soup_object = BeautifulSoup(html_page, 'lxml')
         except Exception as e:
-            print(f'\033[31m分析初始化出错:\033[0m {repr(e)} ')
+            logger.error(f'分析初始化出错: {e!r}')
             return False
 
         print('序号  -  小说名称  -  作者')
@@ -47,13 +48,13 @@ class GetFromBQ2(GetNovel):
 
         return True
 
-    def novel_homepage(self, novel_name_index: int) -> Generator | None:
+    def novel_homepage(self, novel_name_index: int) -> Generator[tuple[str, str], Any, None]:
         url: str = f'{self.url}{self.search_results_list[novel_name_index]}'
 
         try:
-            novel_page_html: str = html_request(url)
+            novel_page_html: str = fetch_html(url)
         except Exception as e:
-            print(e)
+            logger.error(f'获取页面时出错: {e!r}')
             return
 
         novel_page_soup_object = BeautifulSoup(novel_page_html, 'lxml')
@@ -69,11 +70,11 @@ class GetFromBQ2(GetNovel):
             yield href, title
 
     def novel_main_text(self, href_key):
-        html_page: str = html_request(f'{self.url}{href_key}')
+        html_page: str = fetch_html(f'{self.url}{href_key}')
         try:
             text_soup_object = BeautifulSoup(html_page, 'lxml')
         except Exception as e:
-            print(e)
+            logger.error(f'分析页面文本时出错: {e!r}')
             return False
 
         original_text: Tag = text_soup_object.select("div[id='chaptercontent']")[0]
