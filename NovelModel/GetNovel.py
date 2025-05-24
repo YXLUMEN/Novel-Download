@@ -1,13 +1,16 @@
 ﻿from abc import abstractmethod
+from pathlib import Path
+
+from tqdm import tqdm
 
 
 class GetNovel:
     __slots__ = (
         'url', 'download_dir', 'mode', 'search_results_count', 'chapters_count',
-        'novel_title', 'search_results_list', 'chapter_href_dict', 'bar')
+        'novel_title', 'search_results_list', 'chapter_href_dict', 'bar', 'file_path_prefix')
 
     def __init__(self, url: str, download_dir: str):
-        self.download_dir: str = download_dir
+        self.download_dir: Path = Path(download_dir)
         self.mode: int = 0
 
         # Website's url
@@ -17,14 +20,15 @@ class GetNovel:
         # all chapters of the novel
         self.chapters_count: int = 0
         self.novel_title: str = ''
+        self.file_path_prefix: Path = Path()
         # to the novel's main page
-        # 根据网站,最大100条
+        # 根据网站, 最大100条
         self.search_results_list: list = []
 
-        self.bar = None
+        self.bar: tqdm | None = None
 
     @abstractmethod
-    def search_novel(self, html_page: str) -> bool:
+    def search_index(self, html_page: str) -> bool:
         pass
 
     @abstractmethod
@@ -48,3 +52,9 @@ class GetNovel:
         self.bar.update(1)
 
         return text
+
+    def __del__(self):
+        if isinstance(self.bar, tqdm):
+            self.bar.close()
+
+        self.search_results_list.clear()
