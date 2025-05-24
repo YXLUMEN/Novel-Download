@@ -7,13 +7,14 @@ from NovelModel import GetNovel
 from util import *
 
 
+# 停止维护
 class GetFromBQ1(GetNovel):
     """
     网站已停用
     """
 
     # 列出搜索结果,将小说网址加入列表
-    def search_novel(self, html_page: str) -> bool:
+    def search_index(self, html_page: str) -> bool:
         try:
             search_soup_object = BeautifulSoup(html_page, 'lxml')
         except Exception as e:

@@ -14,18 +14,17 @@ from util import fetch_html, user_select
 def server_forever(model: GetNovel, search_url: str, key: str) -> None:
     while True:
         search_string: str = input('\033[36;1m请输入查询的小说名称:  \033[0m')
-
-        logger.info('开始查找...')
+        print('\033[32m开始查找...\033[0m')
 
         html: str = fetch_html(search_url, params={key: search_string})
-        search_result: bool = model.search_novel(html)
+        search_result: bool = model.search_index(html)
 
         if not search_result:
             logger.warning('未找到结果')
             raise NoResultsError
 
         if model.search_results_count == 0:
-            logger.info('搜索结果为空,换一个关键词吧~')
+            print('\n搜索结果为空,换一个关键词吧~')
             time.sleep(0.5)
             continue
 
@@ -39,20 +38,21 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
         select: str = input('\033[36;1m请选择小说序号:\033[0m ')
 
         if not select.isdigit():
-            logger.warning('请输入整数')
+            print('\033[31m请输入整数\033[0m')
             continue
 
         select: int = int(select) - 1
         if 0 <= select < model.search_results_count:
             break
-        logger.warning('请输入整数,且不小于0不大于搜索结果数')
+
+        print('\033[31m请输入整数,且不小于0不大于搜索结果数\033[0m')
 
     url: str = model.url + model.search_results_list[select]
 
     if user_select('是否打开浏览器确认?(y/n)\n') == 'y':
         os.system(f'start {url}')
 
-    logger.info('正在获取...')
+    print('正在获取...')
     time.sleep(0.5)
 
     del url
@@ -77,8 +77,7 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
 
     max_pages: int = sum(1 for _ in chapter_generator) + temp_counting
     model.chapters_count = max_pages
-
-    logger.info(f'\033[32;1m当前共{max_pages}章\033[0m')
+    print(f'\033[32;1m当前共{max_pages}章\033[0m')
 
     del temp_counting, chapter_generator, chapter_generator_back
 
@@ -87,7 +86,7 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
 
     start_page, end_page = page_slice(max_pages, model)
 
-    threads: int = 32
+    threads: int = min(32, end_page - start_page)
 
     if user_select(f'\033[36;1m将启动{threads}条线程,是否更改?\033[0m (y/n)\n ') == 'y':
         while True:
@@ -111,7 +110,7 @@ def start_thread(model: GetNovel, threads: int, slices: islice) -> None:
 
     select: str = user_select('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中? (Y/n)\033[0m\n')
 
-    logger.info('开始处理...')
+    print('开始处理...')
 
     # Create progress bar
     model.bar = tqdm(total=model.chapters_count, colour='#39c6f9')
@@ -155,12 +154,12 @@ def page_slice(max_pages: int, model: GetNovel) -> tuple[int, int]:
 
         # "start" will be defined as an int
         if not start_page_str.isdigit():
-            logger.warning('章节目录必须是整数!')
+            print('\033[33;1m章节目录必须是整数!\033[0m')
             continue
 
         start_page = int(start_page_str)
         if start_page < 0 or start_page > max_pages:
-            logger.warning('选择不能小于0或大于最大章节数')
+            print('\033[33;1m选择不能小于0或大于最大章节数\033[0m')
             continue
 
         end_page_str: str = input('\033[36;1m选择终止章节,如不输入默认选择最后一章,否则输入整数:\033[0m ')
@@ -169,16 +168,16 @@ def page_slice(max_pages: int, model: GetNovel) -> tuple[int, int]:
             break
 
         if not end_page_str.isdigit():
-            logger.warning('章节目录必须是整数!')
+            print('\033[33;1m章节目录必须是整数!\033[0m')
             continue
 
         end_page = int(end_page_str)
         if end_page <= start_page:
-            logger.warning('终止章节数不能小于等于起始章节!')
+            print('\033[33;1m终止章节数不能小于等于起始章节!\033[0m')
             continue
 
         if end_page > max_pages:
-            logger.warning('终止章节数不能大于最大章节!')
+            print('\033[33;1m终止章节数不能大于最大章节!\033[0m')
             continue
 
         model.chapters_count = end_page - start_page
