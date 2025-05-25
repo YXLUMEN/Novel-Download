@@ -3,8 +3,8 @@ from typing import Generator, Any, override
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
-from NovelModel import GetNovel
 from config import logger
+from novel_model import GetNovel
 from util import fetch_html
 
 
@@ -62,7 +62,6 @@ class GetFromBQ2(GetNovel):
         novel_page_soup_object: BeautifulSoup = BeautifulSoup(novel_page_html, 'lxml')
 
         self.novel_title = novel_page_soup_object.select("header span[class='title']")[0].get_text()
-        self.file_path_prefix = self.download_dir / self.novel_title
 
         chapter_list: ResultSet[Tag] = novel_page_soup_object.select("div[id='chapterlist']")[0].select("p a")[1:]
 
@@ -101,7 +100,7 @@ class GetFromBQ2(GetNovel):
             return False
 
         if self.mode:
-            with open(self.file_path_prefix / f'{index}.txt', 'w', encoding='utf-8') as f:
+            with open(f'{self.download_dir}/{self.novel_title}/{index}.txt', 'w', encoding='utf-8') as f:
                 f.write(text)
 
         self.bar.update()

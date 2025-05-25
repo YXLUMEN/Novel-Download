@@ -5,9 +5,9 @@ from itertools import islice, tee
 
 from tqdm import tqdm
 
-from NovelModel import GetNovel
-from config import logger
+from config import logger, CONFIG
 from exceptions.custom_exception import NoResultsError, AnalysisFailed
+from novel_model import GetNovel
 from util import fetch_html, user_select
 
 
@@ -77,7 +77,7 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
 
     max_pages: int = sum(1 for _ in chapter_generator) + temp_counting
     model.chapters_count = max_pages
-    print(f'\033[32;1m当前共{max_pages}章\033[0m')
+    print(f'\033[32;1m当前共 {max_pages} 章\033[0m')
 
     del temp_counting, chapter_generator, chapter_generator_back
 
@@ -88,17 +88,17 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
 
     threads: int = min(32, end_page - start_page)
 
-    if user_select(f'\033[36;1m将启动{threads}条线程,是否更改?\033[0m (y/n)\n ') == 'y':
+    if user_select(f'\033[36;1m将启动 {threads} 条线程,是否更改?\033[0m (y/n)\n ') == 'y':
         while True:
             threads: str = input('请输入线程数: ')
             if threads.isdigit():
                 threads = int(threads)
                 break
 
-            logger.warning('只能是整数!')
+            print('只能是整数!')
 
-    if not os.access('./Download', os.W_OK):
-        os.mkdir('./Download')
+    if not os.access(CONFIG['default_download_path'], os.W_OK):
+        os.mkdir(CONFIG['default_download_path'])
 
     start_thread(model, threads, islice(chapter_url_generator, start_page, end_page))
 
@@ -106,30 +106,28 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
 
 
 def start_thread(model: GetNovel, threads: int, slices: islice) -> None:
-    download_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=int(threads))
+    download_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=threads, thread_name_prefix='novel_download')
 
     select: str = user_select('\033[36;1m是否输出单个文件,即所有章节包含在一个文本文档中? (Y/n)\033[0m\n')
 
     print('开始处理...')
 
     # Create progress bar
-    model.bar = tqdm(total=model.chapters_count, colour='#39c6f9')
+    model.bar = tqdm(total=model.chapters_count, colour='#e1dfdd')
     model.bar.set_description('DownLoad')
 
     if select == 'y':
         # Use "map" to output one file
-        result = download_pool.map(
-            model.write_novel_text,
-            slices)
+        result = download_pool.map(model.write_novel_text, slices)
 
-        with open(f'./Download/{model.novel_title}.txt', 'w', encoding='utf-8') as f:
+        with open(f'{CONFIG['default_download_path']}/{model.novel_title}.txt', 'w', encoding='utf-8') as f:
             for each in result:
                 f.write(each)
     else:
         # Output each page as a file
         model.mode = 1
-        if not os.access(f'./Download/{model.novel_title}', os.W_OK):
-            os.mkdir(f'./Download/{model.novel_title}')
+        if not os.access(f'{CONFIG['default_download_path']}/{model.novel_title}', os.W_OK):
+            os.mkdir(f'{CONFIG['default_download_path']}/{model.novel_title}')
 
         for i, each in enumerate(slices):
             download_pool.submit(model.write_novel_text, each, i)

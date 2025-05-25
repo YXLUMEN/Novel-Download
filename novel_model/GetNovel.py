@@ -1,5 +1,6 @@
 ﻿from abc import abstractmethod
 from pathlib import Path
+from typing import Generator, Any
 
 from tqdm import tqdm
 
@@ -7,10 +8,13 @@ from tqdm import tqdm
 class GetNovel:
     __slots__ = (
         'url', 'download_dir', 'mode', 'search_results_count', 'chapters_count',
-        'novel_title', 'search_results_list', 'chapter_href_dict', 'bar', 'file_path_prefix')
+        'novel_title', 'search_results_list', 'chapter_href_dict', 'bar')
 
-    def __init__(self, url: str, download_dir: str):
+    def __init__(self, url: str, download_dir: str | Path):
         self.download_dir: Path = Path(download_dir)
+        if not self.download_dir.is_dir():
+            self.download_dir.mkdir(parents=True, exist_ok=True)
+
         self.mode: int = 0
 
         # Website's url
@@ -20,7 +24,6 @@ class GetNovel:
         # all chapters of the novel
         self.chapters_count: int = 0
         self.novel_title: str = ''
-        self.file_path_prefix: Path = Path()
         # to the novel's main page
         # 根据网站, 最大100条
         self.search_results_list: list = []
@@ -32,7 +35,7 @@ class GetNovel:
         pass
 
     @abstractmethod
-    def novel_homepage(self, novel_name_index: int):
+    def novel_homepage(self, novel_name_index: int) -> Generator[tuple[str, str], Any, None]:
         pass
 
     @abstractmethod
@@ -49,7 +52,7 @@ class GetNovel:
         if self.mode:
             with open(f'{self.download_dir}/{self.novel_title}/{index} {title}.txt', 'w', encoding='utf-8') as f:
                 f.write(text)
-        self.bar.update(1)
+        self.bar.update()
 
         return text
 
