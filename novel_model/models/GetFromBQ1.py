@@ -3,7 +3,7 @@ from typing import Generator, Any
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
-from NovelModel import GetNovel
+from novel_model import GetNovel
 from util import *
 
 
