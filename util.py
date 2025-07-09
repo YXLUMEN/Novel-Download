@@ -15,7 +15,7 @@ def fetch_html(
         retry_times: int = 5,
         timeout: int = 60,
         params: dict = None,
-        referer: str = None) -> str:
+        referer: str = None) -> str | None:
     referer = url if not referer else referer
 
     headers: dict[str, str] = {
@@ -43,11 +43,10 @@ def fetch_html(
             return response.text
         except Exception as e:
             if i >= retry_times + 1 or retry_times <= 0:
-                logger.error(f'网页获取: {e!r}')
-                return ''
+                logger.error('网页获取: {}', repr(e))
+                return None
 
             logger.info(f'\033[33m尝试重连... \033[0m{i + 1}/{retry_times}')
-        finally:
             time.sleep(random.uniform(0.2, 1.5))
 
 

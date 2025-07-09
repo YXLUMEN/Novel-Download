@@ -68,7 +68,7 @@ class GetFromBQ1(GetNovel):
         try:
             novel_page_html: str = fetch_html(url)
         except Exception as e:
-            print(e)
+            logger.error('Can not fetch novel page {}', e)
             return
 
         novel_page_soup_object = BeautifulSoup(novel_page_html, 'lxml')

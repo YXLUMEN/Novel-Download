@@ -31,7 +31,7 @@ def server_forever(model: GetNovel, search_url: str, key: str) -> None:
         if user_select('\033[34;1m是否结束查询? (y/n)\033[0m \n').lower() == 'y':
             break
 
-    del html
+    del html, search_result, search_string
 
     # 选择查询结果
     while True:
