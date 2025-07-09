@@ -44,7 +44,7 @@ class GetFromBQ2(GetNovel):
 
                 print(f'{novel_index} - {novel_name} - {novel_author}')
             except Exception as e:
-                logger.error(f'分析目录时出错: {e!r}')
+                logger.error('分析目录时出错: {}', repr(e))
                 return False
 
         return True
@@ -55,9 +55,11 @@ class GetFromBQ2(GetNovel):
 
         try:
             novel_page_html: str = fetch_html(url)
+            if not novel_page_html:
+                return None
         except Exception as e:
-            logger.error(f'获取页面时出错: {e!r}')
-            return
+            logger.error('获取页面时出错: {}', repr(e))
+            return None
 
         novel_page_soup_object: BeautifulSoup = BeautifulSoup(novel_page_html, 'lxml')
 
